@@ -1,0 +1,6 @@
+[
+    {
+        "caption": "Token Count",
+        "command": "token_count",
+    }
+]
