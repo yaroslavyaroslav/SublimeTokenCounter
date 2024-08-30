@@ -2,9 +2,17 @@ import sublime
 import sublime_plugin
 import subprocess
 
-class TokenCountCommand(sublime_plugin.TextCommand):
+VIEW_SETTINGS_KEY_TOKEN_COUNT_ENABLED = "token_count_enabled"
+
+class TokensCountCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        self.view.erase_phantoms("token_count")
+        view_settings = self.view.settings()
+        is_enabled = view_settings.get(VIEW_SETTINGS_KEY_TOKEN_COUNT_ENABLED, False)
+
+        if is_enabled:
+            self.close_phantom(None)  # Close existing phantom
+            view_settings.set(VIEW_SETTINGS_KEY_TOKEN_COUNT_ENABLED, False)
+            return
 
         # Get selected text
         selections = self.view.sel()
@@ -19,6 +27,7 @@ class TokenCountCommand(sublime_plugin.TextCommand):
         token_count = self.count_tokens(total_text)
 
         self.show_phantom(selections[0], token_count)
+        view_settings.set(VIEW_SETTINGS_KEY_TOKEN_COUNT_ENABLED, True)
 
     def count_tokens(self, text):
         # Call the Rust binary

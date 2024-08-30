@@ -1,6 +1,6 @@
 [
     {
         "caption": "Token Count",
-        "command": "token_count",
+        "command": "tokens_count",
     }
 ]
