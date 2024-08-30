@@ -32,7 +32,7 @@ class TokenCountCommand(sublime_plugin.TextCommand):
 
     def show_phantom(self, region, token_count):
         # Create the phantom content
-        phantom_content = f'Total Tokens: {token_count} <a href="close">[x]</a>'
+        phantom_content = f'<span style="color: lightgreen;">Total Tokens: </span> <span style="color: lightcoral;">{token_count}</span> <a href="close">[x]</a>'
 
         # Create a phantom at the specified region
         phantom = sublime.Phantom(
