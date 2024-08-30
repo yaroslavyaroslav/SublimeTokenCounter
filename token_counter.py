@@ -32,21 +32,19 @@ class TokensCountCommand(sublime_plugin.TextCommand):
     def count_tokens(self, text):
         # Call the Rust binary
         process = subprocess.Popen(
-            ["/Users/yar/Development/Rust/token-counter/target/release/tiktoken_counter", "-"],  # Using '-' for stdin
+            ["/Users/yar/Development/Rust/token-counter/target/release/tiktoken_counter", "-"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
         )
 
-        # Send the text to stdin and read the output
         stdout, stderr = process.communicate(input=text)
 
         if process.returncode != 0:
             sublime.message_dialog(f"Error running Rust token counter: {stderr}")
             return 0
 
-        # Parse the token count
         try:
             return int(stdout.strip())
         except ValueError:
@@ -60,5 +58,4 @@ class TokensCountCommand(sublime_plugin.TextCommand):
         self.view.add_phantom("token_count", region, phantom_content, sublime.LAYOUT_INLINE, on_navigate=self.close_phantom)
 
     def close_phantom(self, _):
-        # Close the phantom display by erasing existing phantoms
         self.view.erase_phantoms("token_count")
