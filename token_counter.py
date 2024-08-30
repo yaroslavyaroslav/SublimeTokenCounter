@@ -11,7 +11,6 @@ class TokensCountCommand(sublime_plugin.TextCommand):
 
         if is_enabled:
             self.close_phantom(None)  # Close existing phantom
-            view_settings.set(VIEW_SETTINGS_KEY_TOKEN_COUNT_ENABLED, False)
             return
 
         # Get selected text
@@ -26,7 +25,9 @@ class TokensCountCommand(sublime_plugin.TextCommand):
 
         token_count = self.count_tokens(total_text)
 
-        self.show_phantom(selections[0], token_count)
+        chars_count = len(total_text)
+
+        self.show_phantom(selections[0], chars_count, token_count)
         view_settings.set(VIEW_SETTINGS_KEY_TOKEN_COUNT_ENABLED, True)
 
     def count_tokens(self, text):
@@ -50,12 +51,13 @@ class TokensCountCommand(sublime_plugin.TextCommand):
         except ValueError:
             return 0
 
-    def show_phantom(self, region, token_count):
+    def show_phantom(self, region, characters_count, token_count):
         # Create the phantom content
-        phantom_content = f'<span style="color: lightgreen;">Total Tokens:</span> <span style="color: lightcoral;">{token_count}</span> <a href="close">[x]</a>'
+        phantom_content = f'<span style="color: lightgreen;">Chars</span>: <span style="color: lightgreen;">{characters_count:,}</span>,  <span style="color: lightcoral;">Tokens</span>: <span style="color: lightcoral;">{token_count:,}</span> <a href="close">[x]</a>'
 
         # Use the add_phantom method to include the phantom
         self.view.add_phantom("token_count", region, phantom_content, sublime.LAYOUT_INLINE, on_navigate=self.close_phantom)
 
     def close_phantom(self, _):
         self.view.erase_phantoms("token_count")
+        self.view.settings().set(VIEW_SETTINGS_KEY_TOKEN_COUNT_ENABLED, False)
