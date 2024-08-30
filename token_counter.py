@@ -1,6 +1,6 @@
 import sublime
 import sublime_plugin
-# import tiktoken
+import subprocess
 
 class TokenCountCommand(sublime_plugin.TextCommand):
     def run(self, edit):
@@ -14,32 +14,38 @@ class TokenCountCommand(sublime_plugin.TextCommand):
             return
 
         # Use a specific model's tokenizer; replace with the model you desire
-        # tokenizer = tiktoken.get_encoding("gpt-3.5-turbo")  # Update model as needed
+        total_text = "\n".join([self.view.substr(sel) for sel in selections])
 
-        total_token_count = 0
+        token_count = self.count_tokens(total_text)
 
-        for sel in selections:
-            # selected_text = self.view.substr(sel)
-            # total_token_count += self.count_tokens(tokenizer, selected_text)
-            total_token_count = 3000
+        self.show_phantom(selections[0], token_count)
 
-        self.show_phantom(selections[0], total_token_count)
+    def count_tokens(self, text):
+        # Call the Rust binary
+        process = subprocess.Popen(
+            ["/Users/yar/Development/Rust/token-counter/target/release/tiktoken_counter", "-"],  # Using '-' for stdin
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
 
-    # def count_tokens(self, tokenizer, text):
-    #     # Tokenize the text and return the token count
-    #     tokens = tokenizer.encode(text)
-    #     return len(tokens)
+        # Send the text to stdin and read the output
+        stdout, stderr = process.communicate(input=text)
+
+        if process.returncode != 0:
+            sublime.message_dialog(f"Error running Rust token counter: {stderr}")
+            return 0
+
+        # Parse the token count
+        try:
+            return int(stdout.strip())
+        except ValueError:
+            return 0
 
     def show_phantom(self, region, token_count):
         # Create the phantom content
-        phantom_content = f'Total Tokens: {token_count} <a href="close">[x]</a>'
-
-        # Create a phantom at the specified region
-        phantom = sublime.Phantom(
-            region,  # Position the phantom at the selection
-            phantom_content,
-            sublime.LAYOUT_INLINE  # Use inline layout for the phantom display
-        )
+        phantom_content = f'<span style="color: lightgreen;">Total Tokens:</span> <span style="color: lightcoral;">{token_count}</span> <a href="close">[x]</a>'
 
         # Use the add_phantom method to include the phantom
         self.view.add_phantom("token_count", region, phantom_content, sublime.LAYOUT_INLINE, on_navigate=self.close_phantom)
