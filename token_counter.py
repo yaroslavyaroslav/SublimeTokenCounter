@@ -36,7 +36,7 @@ class TokensCountCommand(sublime_plugin.TextCommand):
         settings = sublime.load_settings('TokenCounter.sublime-settings')
         tokenizer_encoding = settings.get('tokenizer_encoding', 'cl100k_base')
         model_name = settings.get('model_name', None)
-        print(model_name)
+
         if model_name:
             tokenizer = tiktoken.encoding_for_model(model_name)
         else:
@@ -47,7 +47,7 @@ class TokensCountCommand(sublime_plugin.TextCommand):
 
     def show_phantom(self, region, characters_count, token_count):
         # Create the phantom content
-        phantom_content = PHANTOM_TEMPLATE.format(characters_count=characters_count, token_count=characters_count)
+        phantom_content = PHANTOM_TEMPLATE.format(characters_count=characters_count, token_count=token_count)
 
         # Use the add_phantom method to include the phantom
         self.view.add_phantom(
