@@ -1,0 +1,20 @@
+{
+    // Valid values as follow:
+    //
+    // | `cl100k_base` (default) | `gpt-4`, `gpt-3.5-turbo`, `text-embedding-ada-002`,
+    //                             `text-embedding-3-small`, `text-embedding-3-large`  |
+    // | `p50k_base`             | Codex models, `text-davinci-002`, `text-davinci-003`|
+    // | `r50k_base` (or `gpt2`) | GPT-3 models like `davinci`                         |
+    "tokenizer_encoding": "cl100k_base",
+
+    // Optional and supressing the previous setting
+    // To pick tokenizer for a given model
+    // Should be capable to get a particular OpenAI model, e.g. (from OpenAI cookbook):
+    // - "gpt-3.5-turbo-0613",
+    // - "gpt-3.5-turbo-16k-0613",
+    // - "gpt-4-0314",
+    // - "gpt-4-32k-0314",
+    // - "gpt-4-0613",
+    // - "gpt-4-32k-0613",
+    "model_name": "gpt-4o"
+}

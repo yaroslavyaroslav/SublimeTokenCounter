@@ -1,7 +1,14 @@
 {
+    "$schema": "sublime://packagecontrol.io/schemas/dependencies",
+
     "*": {
         "*": [
-            "tiktoken"
+            "tiktoken",
+            "regex",
+            "requests",
+            "charset-normalizer",
+            "idna",
+            "urllib3"
         ]
     }
 }
