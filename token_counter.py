@@ -1,22 +1,27 @@
 import sublime
+from sublime import Phantom, PhantomSet, PhantomLayout
 import sublime_plugin
 import tiktoken
 
-VIEW_SETTINGS_KEY_TOKEN_COUNT_ENABLED = "token_count_enabled"
-PHANTOM_TEMPLATE = '<span style="color: lightgreen;">Chars</span>: <span style="color: lightgreen;">{characters_count:,}</span>,  <span style="color: lightcoral;">Tokens</span>: <span style="color: lightcoral;">{token_count:,}</span> <a href="close">[x]</a>'
+VIEW_SETTINGS_KEY_TOKEN_COUNT = "VIEW_SETTINGS_KEY_TOKEN_COUNT"
+TOKEN_PHANTOM_KEY = "token_count"
+PHANTOM_TEMPLATE = (
+    '<span style="color: lightgreen;">Chars</span>: <span style="color: lightgreen;">{characters_count:,}</span>,'
+    + '  <span style="color: lightcoral;">Tokens</span>:'
+    + ' <span style="color: lightcoral;">{token_count:,}</span> <a href="close">[x]</a>'
+)
 
 
 class TokensCountCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         view_settings = self.view.settings()
-        is_enabled = view_settings.get(VIEW_SETTINGS_KEY_TOKEN_COUNT_ENABLED, False)
+        is_enabled = view_settings.get(VIEW_SETTINGS_KEY_TOKEN_COUNT, False)
 
         if is_enabled:
-            self.close_phantom(None)  # Close existing phantom
-            view_settings.set(VIEW_SETTINGS_KEY_TOKEN_COUNT_ENABLED, False)
+            self.close_phantom(None)
+            view_settings.set(VIEW_SETTINGS_KEY_TOKEN_COUNT, False)
             return
 
-        # Get selected text
         selections = self.view.sel()
 
         if not selections:
@@ -30,34 +35,37 @@ class TokensCountCommand(sublime_plugin.TextCommand):
         chars_count = len(total_text)
 
         self.show_phantom(selections[0], chars_count, total_token_count)
-        view_settings.set(VIEW_SETTINGS_KEY_TOKEN_COUNT_ENABLED, True)
+        view_settings.set(VIEW_SETTINGS_KEY_TOKEN_COUNT, True)
 
     def count_tokens(self, text):
-        settings = sublime.load_settings('TokenCounter.sublime-settings')
-        tokenizer_encoding = settings.get('tokenizer_encoding', 'cl100k_base')
-        model_name = settings.get('model_name', None)
+        settings = sublime.load_settings("TokenCounter.sublime-settings")
+        tokenizer_encoding: str = settings.get("tokenizer_encoding", "cl100k_base")  # type: ignore
+        model_name: str = settings.get("model_name", None)  # type: ignore
 
-        if model_name:
-            tokenizer = tiktoken.encoding_for_model(model_name)
-        else:
-            tokenizer = tiktoken.get_encoding(tokenizer_encoding)
+        tokenizer = (
+            tiktoken.encoding_for_model(model_name)
+            if model_name
+            else tiktoken.get_encoding(tokenizer_encoding)
+        )
 
         tokens = tokenizer.encode(text)
         return len(tokens)
 
     def show_phantom(self, region, characters_count, token_count):
-        # Create the phantom content
-        phantom_content = PHANTOM_TEMPLATE.format(characters_count=characters_count, token_count=token_count)
-
-        # Use the add_phantom method to include the phantom
-        self.view.add_phantom(
-            "token_count",
-            region,
-            phantom_content,
-            sublime.LAYOUT_INLINE,
-            on_navigate=self.close_phantom,
+        phantom_content = PHANTOM_TEMPLATE.format(
+            characters_count=characters_count, token_count=token_count
         )
 
+        line_beginning = self.view.line(self.view.sel()[0])
+
+        phantom = Phantom(
+            line_beginning, phantom_content, PhantomLayout.INLINE, self.close_phantom
+        )
+
+        self.phantom_set = PhantomSet(self.view, TOKEN_PHANTOM_KEY)
+
+        self.phantom_set.update([phantom])
+
     def close_phantom(self, _):
-        self.view.erase_phantoms("token_count")
-        self.view.settings().set(VIEW_SETTINGS_KEY_TOKEN_COUNT_ENABLED, False)
+        self.phantom_set.update([])
+        self.view.settings().set(VIEW_SETTINGS_KEY_TOKEN_COUNT, False)
