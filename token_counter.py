@@ -2,6 +2,7 @@ import sublime
 from sublime import Phantom, PhantomSet, PhantomLayout
 import sublime_plugin
 import tiktoken
+import threading
 
 VIEW_SETTINGS_KEY_TOKEN_COUNT = "VIEW_SETTINGS_KEY_TOKEN_COUNT"
 TOKEN_PHANTOM_KEY = "token_count"
@@ -10,6 +11,18 @@ PHANTOM_TEMPLATE = (
     + '  <span style="color: lightcoral;">Tokens</span>:'
     + ' <span style="color: lightcoral;">{token_count:,}</span> <a href="close">[x]</a>'
 )
+
+
+def get_tokenizer_async(callback, model_name=None, tokenizer_encoding="cl100k_base"):
+    def load_tokenizer():
+        if model_name:
+            tokenizer = tiktoken.encoding_for_model(model_name)
+        else:
+            tokenizer = tiktoken.get_encoding(tokenizer_encoding)
+
+        sublime.set_timeout(lambda: callback(tokenizer), 0)
+
+    threading.Thread(target=load_tokenizer).start()
 
 
 class TokensCountCommand(sublime_plugin.TextCommand):
@@ -30,24 +43,29 @@ class TokensCountCommand(sublime_plugin.TextCommand):
 
         total_text = "\n".join([self.view.substr(sel) for sel in selections])
 
-        total_token_count = self.count_tokens(total_text)
-
         chars_count = len(total_text)
 
-        self.show_phantom(selections[0], chars_count, total_token_count)
+        self.load_and_count_tokens(total_text, chars_count, selections[0])
         view_settings.set(VIEW_SETTINGS_KEY_TOKEN_COUNT, True)
 
-    def count_tokens(self, text):
-        settings = sublime.load_settings("TokenCounter.sublime-settings")
-        tokenizer_encoding: str = settings.get("tokenizer_encoding", "cl100k_base")  # type: ignore
-        model_name: str = settings.get("model_name", None)  # type: ignore
+    def on_tokenizer_ready(self, tokenizer, text, chars_count, region):
+        token_count = self.count_tokens_sync(tokenizer, text)
+        self.show_phantom(region, chars_count, token_count)
 
-        tokenizer = (
-            tiktoken.encoding_for_model(model_name)
-            if model_name
-            else tiktoken.get_encoding(tokenizer_encoding)
+    def load_and_count_tokens(self, text, chars_count, region):
+        settings = sublime.load_settings("TokenCounter.sublime-settings")
+        model_name: str | None = settings.get("model_name", None)  # type: ignore
+        tokenizer_encoding: str = settings.get("tokenizer_encoding", "cl100k_base")  # type: ignore
+
+        get_tokenizer_async(
+            callback=lambda tokenizer: self.on_tokenizer_ready(
+                tokenizer, text, chars_count, region
+            ),
+            model_name=model_name,
+            tokenizer_encoding=tokenizer_encoding,
         )
 
+    def count_tokens_sync(self, tokenizer, text):
         tokens = tokenizer.encode(text)
         return len(tokens)
 
