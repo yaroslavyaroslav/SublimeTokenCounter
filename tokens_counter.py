@@ -85,5 +85,6 @@ class TokensCountCommand(sublime_plugin.TextCommand):
         self.phantom_set.update([phantom])
 
     def close_phantom(self, _):
-        self.phantom_set.update([])
+        if hasattr(self, "phantom_set"):
+            self.phantom_set.update([])
         self.view.settings().set(VIEW_SETTINGS_KEY_TOKEN_COUNT, False)
