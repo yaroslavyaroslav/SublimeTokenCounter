@@ -1,8 +1,7 @@
 {
     "$schema": "sublime://packagecontrol.io/schemas/dependencies",
-
     "*": {
-        "*": [
+        ">=4205": [
             "tiktoken",
             "regex",
             "requests",
