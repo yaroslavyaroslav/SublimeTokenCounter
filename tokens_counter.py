@@ -53,7 +53,7 @@ class TokensCountCommand(sublime_plugin.TextCommand):
         self.show_phantom(region, chars_count, token_count)
 
     def load_and_count_tokens(self, text, chars_count, region):
-        settings = sublime.load_settings("TokenCounter.sublime-settings")
+        settings = sublime.load_settings("TokensCounter.sublime-settings")
         model_name: str | None = settings.get("model_name", None)  # type: ignore
         tokenizer_encoding: str = settings.get("tokenizer_encoding", "cl100k_base")  # type: ignore
 
